@@ -1,0 +1,46 @@
+import requests
+from bs4 import  BeautifulSoup
+import chardet
+
+titleList=[]#搜索结果的列表
+resultHref=[]#搜索结果链接
+keyword=input('请输入要搜索的影片：')#搜索关键词
+index={}#索引表
+def getHTMLText(url):
+    try:
+        r=requests.get(url)
+        r.raise_for_status()
+        r.encoding=r.apparent_encoding
+        return r.text
+    except:
+        return 'error'
+
+def convertChar(char):#编码转换函数
+    gb2312=str(char.encode('gb2312'))
+    content=gb2312.replace('\\x','%').replace('\'','')
+    return content[1:]
+
+def getResult():
+    html=getHTMLText('https://www.loldytt.com/search/index.asp?keyword='+convertChar(keyword))
+    soup=BeautifulSoup(html,'html.parser')
+    name = soup.select('label > a')
+    for i in name:
+        titleList.append(i.text)
+        resultHref.append(i.get('href'))
+    for i in range(len(titleList)):
+        print(str(i+1)+':\t'+titleList[i])
+        index[i]=[resultHref[i]]
+
+
+def parserDownload(num):
+    html=getHTMLText(index[num][0])
+    soup=BeautifulSoup(html,'html.parser')
+    downloadList = soup.find_all('a', attrs={'target': '_self'})
+    for i in downloadList:
+        if i.get('title'):
+            print(i.text+'\t'+i.get('href'))
+
+if __name__ == '__main__':
+    getResult()
+    num=input('请输入选择的影片：')
+    parserDownload(int(num)-1)
